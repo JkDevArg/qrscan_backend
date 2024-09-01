@@ -10,4 +10,4 @@ import { HttpModule } from '@nestjs/axios';
     exports: [GoogleService]
 })
 
-export class GptModule {}
+export class GoogleModule {}
