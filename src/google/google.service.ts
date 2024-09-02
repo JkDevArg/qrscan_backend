@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
 import { lastValueFrom } from 'rxjs';
 import { GoogleGenerativeAI } from '@google/generative-ai';
@@ -6,35 +6,30 @@ import { AnswerChatBotDto } from './dto/answer-chatbot.dto';
 
 @Injectable()
 export class GoogleService {
-  private webhookUrl = process.env.WEBHOOK_URL;
+  private webhookUrl = "https://chat.googleapis.com/v1/spaces/AAAAYKP6mW0/messages?key=AIzaSyDdI0hCZtE6vySjMm-WEfRq3CPzqKqqsHI&token=gF6_pQwRzij7rTOtek6RtkEHgFh_z4aQMn9N21p47us";
 
   constructor(private readonly httpService: HttpService) {}
 
   async answerChatBot(message: string) {
-    // Analizar el mensaje para extraer los parámetros
-    const regex = /^\/bot\s*"([^"]*)"\s*,\s*"([^"]*)"\s*,\s*"([^"]*)"\s*$/;
-    const match = message.match(regex);
+    if (!message) throw new BadRequestException('El mensaje es requerido');
 
-    if (!match) {
-      throw new Error('Formato de mensaje inválido');
-    }
 
-    const [, prompt, version, temperatureStr] = match;
+    const temperatureStr = "0.7";
+    const prompt = message;
+    const version = 'gemini-pro';
+
     const temperature = parseFloat(temperatureStr);
 
-    // Validar que temperature es un número
     if (isNaN(temperature)) {
-      throw new Error('El valor de temperature no es un número válido');
+      throw new BadRequestException('El valor de temperature no es un número válido');
     }
 
-    // Crear el DTO a partir de los parámetros extraídos
     const answerChatBotDto: AnswerChatBotDto = {
       prompt,
       version: version || 'gemini-pro',
       temperature,
     };
 
-    // Llamar al API de Google Generative AI
     const genAI = new GoogleGenerativeAI(process.env.CHAT_GEMINI_KEY);
     const model = genAI.getGenerativeModel({ model: answerChatBotDto.version });
     const result = await model.generateContent(answerChatBotDto.prompt);
