@@ -13,7 +13,6 @@ export class GoogleService {
   async answerChatBot(message: string) {
     if (!message) throw new BadRequestException('El mensaje es requerido');
 
-
     const temperatureStr = "0.7";
     const prompt = message;
     const version = 'gemini-pro';
@@ -40,13 +39,12 @@ export class GoogleService {
 
     await this.sendToWebhook(responseMessage);
 
-    return result.response.text();
+    return JSON.stringify({ "response": result.response.text()});
   }
 
   private async sendToWebhook(message: any) {
     try {
       const response = await lastValueFrom(this.httpService.post(this.webhookUrl, message));
-      console.log('Mensaje enviado al webhook:', response.data);
     } catch (error) {
       console.error('Error al enviar el mensaje al webhook:', error.response?.data || error.message);
     }
