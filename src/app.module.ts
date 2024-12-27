@@ -3,13 +3,27 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { APP_GUARD } from '@nestjs/core';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { CustomThrottlerGuard } from './common/throttler/throttler.guard';
-import { GoogleModule } from './google/google.module';
+import { AppController } from './app.controller';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { AuthModule } from './auth/auth.module';
+import { UsersModule } from './users/users.module';
+import { QrscanModule } from './qrscan/qrscan.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       envFilePath: ['.env'],
       isGlobal: true,
+    }),
+    TypeOrmModule.forRoot({
+      type: "mysql",
+      host: process.env.DATABASE_HOST,
+      port: parseInt(process.env.DATABASE_PORT),
+      username: process.env.DATABASE_USER,
+      password: process.env.DATABASE_PASSWORD,
+      database: process.env.DATABASE_NAME,
+      autoLoadEntities: true,
+      synchronize: true,
     }),
     ThrottlerModule.forRootAsync({
       imports: [ConfigModule],
@@ -21,9 +35,11 @@ import { GoogleModule } from './google/google.module';
         },
       ],
     }),
-    GoogleModule,
+    AuthModule,
+    UsersModule,
+    QrscanModule,
   ],
-  controllers: [],
+  controllers: [AppController],
   providers: [
     { provide: APP_GUARD, useClass: CustomThrottlerGuard },],
 })

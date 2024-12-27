@@ -11,6 +11,10 @@ pnpm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 lerna-debug.log*
+mysql
+.vscode
+.hygen
+.husky
 
 # OS
 .DS_Store

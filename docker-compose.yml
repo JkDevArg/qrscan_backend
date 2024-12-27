@@ -1,0 +1,27 @@
+version: "3"
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: qrsec_mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: Twr9YV5NB@Fby7!2
+      MYSQL_DATABASE: db_qrscan
+      MYSQL_USER: jcenturion
+      MYSQL_PASSWORD: cwKpV3Pr@8MtU!vyxfEX7D_
+    volumes:
+      - ./mysql:/var/lib/mysql
+    ports:
+      - "3308:3306"
+
+  redis:
+    container_name: redis
+    image: redis
+    ports:
+      - 6381:6379
+    volumes:
+      - redis:/data
+
+volumes:
+  redis:
+    driver: local
