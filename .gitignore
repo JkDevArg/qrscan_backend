@@ -14,7 +14,6 @@ lerna-debug.log*
 mysql
 .vscode
 .hygen
-.husky
 
 # OS
 .DS_Store
@@ -45,6 +44,8 @@ mysql
 .env.test.local
 .env.production.local
 .env.local
+.husky
+.expo
 
 # temp directory
 .temp

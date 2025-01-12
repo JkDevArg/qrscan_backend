@@ -1,0 +1,29 @@
+{
+  "expo": {
+    "name": "QRScan APP",
+    "slug": "qrscan",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
+    "updates": {
+      "fallbackToCacheTimeout": 0
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "android": {
+      "package": "com.centusec.qrscan",
+      "versionCode": 1
+    },
+    "extra": {
+      "eas": {
+        "projectId": "a8dd94a9-5fee-4851-b4fa-44db90c6db64"
+      }
+    }
+  }
+}

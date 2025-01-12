@@ -8,7 +8,9 @@ import { Repository } from 'typeorm';
 @Injectable()
 export class QrscanService {
   private readonly apiKey = process.env.G_API_KEY;
-  private isScanning = false; // Bandera para controlar las solicitudes
+  private readonly google_endpoint = `https://safebrowsing.googleapis.com/v4/threatMatches:find?key=${this.apiKey}`;
+  private readonly virus_total_endpoint = `https://www.virustotal.com/api/v3/urls`;
+  private isScanning = false;
 
   constructor(
     @InjectRepository(Qrscan)
@@ -25,8 +27,33 @@ export class QrscanService {
       return { message: "Solicitud ya en proceso." };
     }
 
-    this.isScanning = true; // Establecer la bandera como "ocupado"
-    const endpoint = `https://safebrowsing.googleapis.com/v4/threatMatches:find?key=${this.apiKey}`;
+    if (!qrscanDto.url || !this.isValidUrl(qrscanDto.url)) {
+      throw new HttpException('URL inválida', HttpStatus.BAD_REQUEST);
+    }
+
+    this.isScanning = true;
+
+    try {
+      const googleResponse = await this.checkWithGoogleSafeBrowsing(qrscanDto.url);
+
+      if (googleResponse) {
+        //const virusTotalResponse = await this.virus_total(qrscanDto.url);
+        return false;
+      }
+
+      return true;
+    } catch (error) {
+      console.error("Error al realizar la solicitud:", error);
+      throw new HttpException(
+        'Error durante el escaneo',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    } finally {
+      this.isScanning = false;
+    }
+  }
+
+  async checkWithGoogleSafeBrowsing(url: string) {
     const body = {
       client: {
         clientId: "newagent-fdbea",
@@ -36,41 +63,17 @@ export class QrscanService {
         threatTypes: ["MALWARE", "SOCIAL_ENGINEERING"],
         platformTypes: ["WINDOWS"],
         threatEntryTypes: ["URL"],
-        threatEntries: [{ "url": qrscanDto.url }],
+        threatEntries: [{ url }],
       },
     };
 
-    console.log(endpoint)
-    console.log(body)
+    const response = await this.makeHttpRequest(this.google_endpoint, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
 
-    try {
-      const response = await fetch(endpoint, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(body),
-      });
-
-      console.log(response)
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const data = await response.json();
-
-      if (Object.keys(data).length === 0) {
-        return true;
-      }
-
-      return false;
-    } catch (error) {
-      console.error("Error al realizar la solicitud:", error);
-      throw error;
-    } finally {
-      this.isScanning = false; // Liberar la bandera al finalizar
-    }
+    return Object.keys(response).length !== 0;
   }
 
   findAll() {
@@ -91,5 +94,72 @@ export class QrscanService {
 
   remove(id: number) {
     return `This action removes a #${id} qrscan`;
+  }
+
+  async virus_total(url: string) {
+    const apiKey = process.env.VT_API_KEY;
+
+    const options: RequestInit = {
+        method: "POST",
+        headers: {
+            "x-apikey": apiKey,
+            "content-type": "application/x-www-form-urlencoded",
+            "accept": "pplication/json",
+        },
+        body: JSON.stringify({ url }),
+    };
+
+    try {
+        const response = await this.makeHttpRequest(this.virus_total_endpoint, options);
+        console.log("Respuesta de VirusTotal:", response);
+        return response;
+    } catch (error) {
+        console.error("Error al consultar VirusTotal:", error);
+        throw new HttpException(
+            "Error al consultar el servicio de VirusTotal",
+            HttpStatus.INTERNAL_SERVER_ERROR
+        );
+    }
+
+   /* 
+   const options = {
+      method: 'POST',
+      headers: {
+        accept: 'application/json',
+        'content-type': 'application/x-www-form-urlencoded'
+      }
+    };
+
+    fetch('https://www.virustotal.com/api/v3/urls', options)
+      .then(res => res.json())
+      .then(res => console.log(res))
+      .catch(err => console.error(err));
+   
+   */
+}
+
+  private async makeHttpRequest(endpoint: string, options: RequestInit) {
+    try {
+      const response = await fetch(endpoint, options);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      return await response.json();
+    } catch (error) {
+      console.error("Error al realizar la solicitud:", error);
+      throw new HttpException(
+        'Error al realizar la solicitud HTTP',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  private isValidUrl(url: string): boolean {
+    try {
+      new URL(url);
+      return true;
+    } catch (_) {
+      return false;
+    }
   }
 }
