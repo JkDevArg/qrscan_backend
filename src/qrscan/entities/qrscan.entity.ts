@@ -11,6 +11,9 @@ export class Qrscan {
     @Column({ type: 'text' })
     data: string;
 
+    @Column({ type: 'bool'})
+    suspicion: boolean;
+
     @CreateDateColumn()
     createdAt: Date;
 }

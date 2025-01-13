@@ -50,6 +50,7 @@ mysql
 # temp directory
 .temp
 .tmp
+jcenturion.pem
 
 # Runtime data
 pids

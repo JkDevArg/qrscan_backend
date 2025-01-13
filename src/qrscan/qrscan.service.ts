@@ -34,14 +34,24 @@ export class QrscanService {
     this.isScanning = true;
 
     try {
+      // validamos si ya existe en la base ede datos}
+      const formattedUrl = this.getDomain(qrscanDto.url);
+      const qrscan = await this.QrScanRepository.findOne({ where: { url: formattedUrl } });
+      if (qrscan) {
+        console.log(qrscan.url);
+        return qrscan.suspicion;
+      }
+
       const googleResponse = await this.checkWithGoogleSafeBrowsing(qrscanDto.url);
 
       if (googleResponse) {
         //const virusTotalResponse = await this.virus_total(qrscanDto.url);
-        return false;
+        await this.saveData(formattedUrl, googleResponse, true);
+        return true;
       }
 
-      return true;
+      await this.saveData(formattedUrl, googleResponse, false);
+      return false;
     } catch (error) {
       console.error("Error al realizar la solicitud:", error);
       throw new HttpException(
@@ -97,7 +107,7 @@ export class QrscanService {
   }
 
   async virus_total(url: string) {
-    const apiKey = process.env.VT_API_KEY;
+    const apiKey = process.env.VIRUSTOTAL_API_KEY;
 
     const options: RequestInit = {
         method: "POST",
@@ -121,7 +131,7 @@ export class QrscanService {
         );
     }
 
-   /* 
+   /*
    const options = {
       method: 'POST',
       headers: {
@@ -162,4 +172,22 @@ export class QrscanService {
       return false;
     }
   }
+
+  private async saveData(url: string, response: any, suspicion: boolean){
+    const saveQrScan = this.QrScanRepository.create({
+      url: url,
+      data: JSON.stringify(response),
+      suspicion: suspicion,
+    });
+    await this.QrScanRepository.save(saveQrScan);
+  }
+
+  private getDomain(url: string) {
+    let domain = url.replace(/^(https?:\/\/)?(www\.)?/, '');
+
+    domain = domain.split('/')[0];
+
+    return domain;
+  }
 }
+
